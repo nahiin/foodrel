@@ -11,6 +11,7 @@ interface Video {
   username: string
   likes: string
   comments: string
+  youtubeId?: string
 }
 
 export function VideoPlayer({ video, isActive }: { video: Video; isActive: boolean }) {
@@ -18,23 +19,29 @@ export function VideoPlayer({ video, isActive }: { video: Video; isActive: boole
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [useYouTube, setUseYouTube] = useState(true)
 
   useEffect(() => {
     if (videoRef.current) {
-      if (isActive) {
+      if (isActive && !useYouTube) {
         videoRef.current.play().catch((error) => {
           console.error("Autoplay failed:", error)
         })
         setIsPlaying(true)
-      } else {
+      } else if (!isActive && !useYouTube) {
         videoRef.current.pause()
         videoRef.current.currentTime = 0
         setIsPlaying(false)
       }
     }
-  }, [isActive])
+  }, [isActive, useYouTube])
 
   const togglePlay = () => {
+    // If using YouTube iframe, we can't directly control it
+    if (useYouTube) {
+      return
+    }
+    
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause()
@@ -53,6 +60,11 @@ export function VideoPlayer({ video, isActive }: { video: Video; isActive: boole
   const handleVideoLoaded = () => {
     setIsLoaded(true)
   }
+
+  // Create YouTube embed URL with autoplay and loop for the active video
+  const youtubeEmbedUrl = video.youtubeId && isActive
+    ? `https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${video.youtubeId}&controls=0&showinfo=0&rel=0`
+    : `https://www.youtube.com/embed/${video.youtubeId}?controls=0&showinfo=0&rel=0`;
 
   return (
     <div className="relative h-full w-full bg-black" onClick={togglePlay}>
@@ -85,18 +97,32 @@ export function VideoPlayer({ video, isActive }: { video: Video; isActive: boole
         </div>
       )}
 
-      <video
-        ref={videoRef}
-        src={video.url}
-        className="h-full w-full object-contain"
-        loop
-        muted
-        playsInline
-        onLoadedData={handleVideoLoaded}
-      />
+      {/* Video player - either YouTube or fallback */}
+      {useYouTube && video.youtubeId ? (
+        <div className="h-full w-full">
+          <iframe 
+            src={youtubeEmbedUrl}
+            className="h-full w-full"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            onLoad={handleVideoLoaded}
+          ></iframe>
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          src={video.url}
+          className="h-full w-full object-contain"
+          loop
+          muted
+          playsInline
+          onLoadedData={handleVideoLoaded}
+        />
+      )}
 
       {/* Play/Pause indicator (shows briefly when tapped) */}
-      {!isPlaying && isLoaded && (
+      {!isPlaying && isLoaded && !useYouTube && (
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/30 p-4 backdrop-blur-sm">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -192,7 +218,27 @@ export function VideoPlayer({ video, isActive }: { video: Video; isActive: boole
           <span className="mt-1 text-xs font-medium text-white">Share</span>
         </button>
       </div>
+
+      {/* Toggle YouTube/Local video mode button */}
+      <button 
+        className="absolute top-4 right-4 z-20 h-8 w-8 rounded-full bg-black/40 flex items-center justify-center"
+        onClick={(e) => {
+          e.stopPropagation();
+          setUseYouTube(!useYouTube);
+        }}
+      >
+        {useYouTube ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2">
+            <path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"></path>
+            <line x1="2" y1="20" x2="2" y2="20"></line>
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+            <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+          </svg>
+        )}
+      </button>
     </div>
   )
 }
-

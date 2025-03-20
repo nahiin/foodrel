@@ -2,49 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { VideoPlayer } from "@/components/video-player"
-
-// Mock data - in a real app, this would come from an API
-const getVideosForCategory = (category: string) => {
-  // These would be actual videos from YouTube or another source
-  return [
-    {
-      id: `${category}-1`,
-      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-      thumbnail: `/placeholder.svg?height=400&width=400&text=${category}+Dish+1`,
-      title: `Delicious ${category} dish 1`,
-      username: "foodlover1",
-      likes: "23.5K",
-      comments: "1.2K",
-    },
-    {
-      id: `${category}-2`,
-      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-      thumbnail: `/placeholder.svg?height=400&width=400&text=${category}+Dish+2`,
-      title: `Amazing ${category} recipe`,
-      username: "chefmaster",
-      likes: "45.2K",
-      comments: "3.7K",
-    },
-    {
-      id: `${category}-3`,
-      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-      thumbnail: `/placeholder.svg?height=400&width=400&text=${category}+Dish+3`,
-      title: `${category} street food tour`,
-      username: "foodtraveler",
-      likes: "89.1K",
-      comments: "5.3K",
-    },
-    {
-      id: `${category}-4`,
-      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-      thumbnail: `/placeholder.svg?height=400&width=400&text=${category}+Dish+4`,
-      title: `Traditional ${category} cooking`,
-      username: "culinaryarts",
-      likes: "67.8K",
-      comments: "4.1K",
-    },
-  ]
-}
+import { foodVideos } from "@/lib/video-data"
 
 export function VideoFeed({ category }: { category: string }) {
   const [videos, setVideos] = useState<any[]>([])
@@ -52,8 +10,8 @@ export function VideoFeed({ category }: { category: string }) {
   const feedRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Fetch videos when category changes
-    const categoryVideos = getVideosForCategory(category)
+    // Get videos for the selected category
+    const categoryVideos = foodVideos[category as keyof typeof foodVideos] || []
     setVideos(categoryVideos)
     setCurrentIndex(0)
 
@@ -113,4 +71,3 @@ export function VideoFeed({ category }: { category: string }) {
     </div>
   )
 }
-
